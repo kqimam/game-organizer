@@ -1,5 +1,5 @@
 # Author: Kaiser Imam
-# Last updated: 2/28/2021
+# Last updated: 3/15/2022
 # Description: Universal launcher for PC and console games stored on the user's system.  Allows users to launch games,
 # view game details, and download a game description and cover art.  Each PC game can store multiple launch
 # configurations which can be chosen at will by the user.
@@ -93,6 +93,14 @@ class PCGameEntry:
     def add_alternate_config(self, config_dictionary):
         """Adds the received alternate configuration dictionary object to the game entry's list of alternate configs."""
         self._alternate_configs.append(config_dictionary)
+
+    def update_alternate_config(self, index, config_dictionary):
+        """Updates the alternate configuration at the received index position."""
+        self._alternate_configs[index] = config_dictionary
+
+    def delete_alternate_config(self, index):
+        """Deletes the alternate configuration at the received index position."""
+        del self._alternate_configs[index]
 
     # Class object export code adapted from
     # https://stackoverflow.com/questions/55584882/trying-to-save-a-class-in-a-list-to-a-file
@@ -228,7 +236,7 @@ class GameOrganizerApp:
 
     def game_organizer(self):
         """Runs a new instance of the Game Organizer program."""
-        print("Game Organizer\n")
+        print("\nGame Organizer")
 
         self.top_level_menu()
 
@@ -236,7 +244,7 @@ class GameOrganizerApp:
         """Displays the top level menu with choices to view games lists, add a game, or exit the program."""
         choice_string = ''
 
-        print("Main Menu")
+        print("\nMain Menu")
         print("1. View PC Games")
         print("2. View Console Games")
         print("3. Add a Game")
@@ -257,7 +265,7 @@ class GameOrganizerApp:
         """Displays the menu to allow the user to add a new PC or console game."""
         choice_string = ''
 
-        print("Add a New Game")
+        print("\nAdd a New Game")
         print("1. Add a PC Game")
         print("2. Add a Console Game")
         print("3. Go back to the Main Menu")
@@ -339,7 +347,7 @@ class GameOrganizerApp:
         choice_string = ''
         display_index = 1
 
-        print("PC Games List")  # Print numbered list of games
+        print("\nPC Games List")  # Print numbered list of games
         for current_game in self.get_pc_games_list():
             print(str(display_index) + ". " + current_game.get_title())
             display_index += 1
@@ -366,7 +374,7 @@ class GameOrganizerApp:
         """
         choice_string = ''
 
-        print(self.get_pc_games_list()[self._selected_game_index].get_title() + " Details")
+        print("\n" + self.get_pc_games_list()[self._selected_game_index].get_title() + " Details")
         print("1. Play Default Configuration")
         print("2. View Alternate Configurations")
         print("3. View Basic Game Information")
@@ -381,7 +389,7 @@ class GameOrganizerApp:
         if choice_string == '1':
             self.run_default_config_pc()
         elif choice_string == '2':
-            self.run_alternate_config_pc()
+            self.view_alternate_configs_pc()
         elif choice_string == '3':
             self.view_basic_game_info_pc()
         elif choice_string == '4':
@@ -389,7 +397,7 @@ class GameOrganizerApp:
         elif choice_string == '5':
             self.view_cover_art_pc()
         elif choice_string == '6':
-            self.edit_pc_game(self.get_selected_game_index())
+            self.edit_pc_game()
         elif choice_string == '7':
             self.delete_pc_game()
         elif choice_string == '8':
@@ -415,14 +423,95 @@ class GameOrganizerApp:
 
         # Add the new game to the PC games collection
         self.add_pc_game(new_game)
+        self.sort_pc_games()  # Sort the PC games list after a new game is appended to the end
         self.save_pc_games_list()  # Save the PC games list file after a new game is added
 
         print("\nAdded " + game_title + " to the PC games collection.")
         self.view_pc_games()
 
-    def edit_pc_game(self, game_index):
-        """Edit the details of the PC game entry with the received index from the list of PC games."""
-        # TODO: edit PC game
+    def sort_pc_games(self):
+        """Sorts the PC games list by game title whenever a game is added."""
+        self.get_pc_games_list().sort(key=self.get_pc_game_entry_title)
+
+    def get_pc_game_entry_title(self, game):
+        """
+        Used in the self.sort_pc_games method for sorting the games list. Receives a PCGameEntry object and returns
+        the game's title.
+        """
+        return game.get_title()
+
+    def edit_pc_game(self):
+        """Edit the details of a PC game entry."""
+        print("\nEdit Details for " + self.get_pc_games_list()[self._selected_game_index].get_title())
+        print("\nCurrent Title: " + self.get_pc_games_list()[self._selected_game_index].get_title())
+        print("\nCurrent Source Platform: " + self.get_pc_games_list()[self._selected_game_index].get_source())
+        print("\nCurrent Application Path: " + self.get_pc_games_list()[self._selected_game_index].
+              get_application_path())
+
+        choice_string = ''
+
+        print("\n1. Edit Title")
+        print("2. Edit Source Platform")
+        print("3. Edit Application Path")
+        print("4. Go back to Game Details Menu for " + self.get_pc_games_list()[
+            self._selected_game_index].get_title())
+
+        choice_string = input()
+
+        if choice_string == '1':
+            self.edit_title_pc()
+        elif choice_string == '2':
+            self.edit_source_platform_pc()
+        elif choice_string == '3':
+            self.edit_application_path_pc()
+        elif choice_string == '4':
+            self.view_pc_game_details()
+
+    def edit_title_pc(self):
+        """
+        Displays a menu to edit the currently selected game's title. Saves the PC games list to a local file after
+        each edit.
+        """
+        print("\nCurrent Title: " + self.get_pc_games_list()[self._selected_game_index].get_title() + "\n")
+        new_title = input("New Title: ")
+
+        # Save the new title to the game's entry
+        self.get_pc_games_list()[self._selected_game_index].set_title(new_title)
+        self.save_pc_games_list()  # Save the PC games list file after an edit is made
+
+        # Go back to the Edit Game menu
+        self.edit_pc_game()
+
+    def edit_source_platform_pc(self):
+        """
+        Displays a menu to edit the currently selected game's source platform. Saves the PC games list to a local file
+        after each edit.
+        """
+        print("\nCurrent Source Platform: " + self.get_pc_games_list()[self._selected_game_index].get_source() + "\n")
+        new_source_platform = input("New Source Platform: ")
+
+        # Save the new source platform to the game's entry
+        self.get_pc_games_list()[self._selected_game_index].set_source(new_source_platform)
+        self.save_pc_games_list()  # Save the PC games list file after an edit is made
+
+        # Go back to the Edit Game menu
+        self.edit_pc_game()
+
+    def edit_application_path_pc(self):
+        """
+        Displays a menu to edit the currently selected game's application path. Saves the PC games list to a local file
+        after each edit.
+        """
+        print("\nCurrent Application Path: " + self.get_pc_games_list()[self._selected_game_index].
+              get_application_path() + "\n")
+        new_application_path = input("New Application Path: ")
+
+        # Save the new application path to the game's entry
+        self.get_pc_games_list()[self._selected_game_index].set_application_path(new_application_path)
+        self.save_pc_games_list()  # Save the PC games list file after an edit is made
+
+        # Go back to the Edit Game menu
+        self.edit_pc_game()
 
     def delete_pc_game(self):
         """Displays a menu to delete the currently selected game from the list of PC games."""
@@ -488,8 +577,155 @@ class GameOrganizerApp:
 
         self.go_back_menu_pc()  # Go back to any previous menu
 
-    def run_alternate_config_pc(self):
-        """Displays and runs alternate configurations for a PC game."""
+    def view_alternate_configs_pc(self):
+        """Displays the details menu for a PC game's registered alternate configurations."""
+        choice_string = ''
+        display_index = 1
+
+        # Display numbered list of alternate configurations
+        print("\nAlternate Configurations for " + self.get_pc_games_list()[self._selected_game_index].get_title())
+        for item in self.get_pc_games_list()[self._selected_game_index].get_alternate_configs():
+            print(str(display_index) + ". " + item["title"])
+            display_index += 1
+
+        print("\nPlease enter the number of the configuration you would like to play.")
+        print("Enter 'A' to add a new configuration.")
+        print("Enter 'E' to edit a configuration.")
+        print("Enter 'D' to delete a configuration.")
+        print("Enter 'H' to view an explanation of the Alternate Configurations feature.")
+        print("Enter 'B' to go back to the previous menu.")
+
+        choice_string = input()
+
+        if choice_string.lower() == 'a':
+            self.new_alternate_config_pc()
+        elif choice_string.lower() == 'e':
+            self.edit_alternate_config_pc_menu_1()
+        elif choice_string.lower() == 'd':
+            self.delete_alternate_config_pc_menu()
+        elif choice_string.lower() == 'h':
+            self.view_alternate_config_explanation()
+        elif choice_string.lower() == 'b':
+            self.view_pc_game_details()
+        else:  # Run the selected alternate configuration
+            self.run_alternate_config_pc(int(choice_string) - 1)
+            self.go_back_menu_pc()
+
+    def run_alternate_config_pc(self, selected_config_index):
+        """Runs an alternate configuration for a PC game."""
+        # Format the game's application path for use in the launch command
+        raw_string = r"{}".format(
+            self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[selected_config_index][
+                "path"])
+        subprocess.Popen(raw_string)
+        self.get_pc_games_list()[self._selected_game_index].set_last_played_date()  # Set to the current date
+        self.save_pc_games_list()  # Save the PC games list file in order to save the last played date
+
+        print("\nNow running " + self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[
+            selected_config_index]["title"] + "\n")
+
+    def new_alternate_config_pc(self):
+        """Displays the menu to add a new launch configuration for a PC game."""
+        print("\nPlease enter the following information for the new launch configuration.")
+        config_title = input("\nConfiguration Title: ")
+        application_path = input("\nApplication Path: ")
+
+        # Create a config dictionary for the game
+        new_config = {"title": config_title, "path": application_path}
+
+        # Add the new config to the alternate configs list
+        self.get_pc_games_list()[self._selected_game_index].add_alternate_config(new_config)
+        self.save_pc_games_list()  # Save the PC games list file after a new config is added
+
+        print("\nAdded " + config_title + " to the alternate configurations list.\n")
+        self.view_alternate_configs_pc()
+
+    def edit_alternate_config_pc_menu_1(self):
+        """Displays the menu to choose an alternate configuration to edit."""
+        choice_string = ''
+        display_index = 1
+
+        # Display numbered list of alternate configurations
+        print("Edit an Alternate Configuration for " + self.get_pc_games_list()[self._selected_game_index].get_title())
+        for item in self.get_pc_games_list()[self._selected_game_index].get_alternate_configs():
+            print(str(display_index) + ". " + item["title"])
+            display_index += 1
+
+        print("\nPlease enter the number of the configuration you would like to edit.")
+        print("Enter 'B' to go back to the previous menu.")
+
+        choice_string = input()
+
+        if choice_string.lower() == 'b':
+            self.view_alternate_configs_pc()
+        else:  #
+            self.edit_alternate_config_pc_menu_2(int(choice_string) - 1)
+
+    def edit_alternate_config_pc_menu_2(self, config_index):
+        """Displays the menu to edit a configuration's fields."""
+        config_title = \
+            self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[config_index]["title"]
+
+        print("\nEdit Details for " + config_title)
+        print("\nCurrent Title: " + config_title)
+        print("\nCurrent Application Path: "
+              + self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[config_index]["path"])
+
+        choice_string = ''
+
+        print("\n1. Edit Title")
+        print("2. Edit Application Path")
+        print("3. Go back to the previous menu")
+
+        choice_string = input()
+
+        if choice_string == '1':
+            self.edit_config_title_pc(config_index)
+        elif choice_string == '2':
+            self.edit_config_application_path_pc(config_index)
+        elif choice_string == '3':
+            self.edit_alternate_config_pc_menu_1()
+
+    def edit_config_title_pc(self, config_index):
+        """
+        Displays a menu to edit the currently selected configuration's's title.
+        """
+        print("\nCurrent Title: " +
+              self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[config_index]["title"] + "\n")
+        new_title = input("New Title: ")
+
+        # Create a temporary dictionary with the new details which will replace the current configuration
+        new_config = {"title": new_title,
+                      "path": self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[config_index][
+                          "path"]}
+
+        # Save the edited configuration
+        self.get_pc_games_list()[self._selected_game_index].update_alternate_config(config_index, new_config)
+        self.save_pc_games_list()  # Save the PC games list file after an edit is made
+
+        self.edit_alternate_config_pc_menu_2(config_index)
+
+    def edit_config_application_path_pc(self, config_index):
+        """
+        Displays a menu to edit the currently selected configuration's's application path.
+        """
+        print("\nCurrent Application Path: " +
+              self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[config_index]["path"] + "\n")
+        new_application_path = input("New Application Path: ")
+
+        # Create a temporary dictionary with the new details which will replace the current configuration
+        new_config = {
+            "title": self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[config_index]["title"],
+            "path": new_application_path}
+
+        # Save the edited configuration
+        self.get_pc_games_list()[self._selected_game_index].update_alternate_config(config_index, new_config)
+        self.save_pc_games_list()  # Save the PC games list file after an edit is made
+
+        self.edit_alternate_config_pc_menu_2(config_index)
+
+    def delete_alternate_config_pc_menu(self):
+        """Displays the menu to delete an alternate configuration for a PC game."""
         choice_string = ''
         display_index = 1
 
@@ -499,35 +735,48 @@ class GameOrganizerApp:
             print(str(display_index) + ". " + item["title"])
             display_index += 1
 
-        print("\nPlease enter the number of the configuration you would like to play.")
+        print("\nPlease enter the number of the configuration you would like to delete.")
         print("Enter 'B' to go back to the previous menu.")
 
         choice_string = input()
 
         if choice_string.lower() == 'b':
-            self.view_pc_game_details()
-        else:
-            selected_config_index = int(choice_string) - 1
+            self.view_alternate_configs_pc()
+        else:  # Delete the selected alternate configuration
+            self.delete_alternate_config_pc(int(choice_string) - 1)
 
-            # Run the selected configuration
-            # Format the game's application path for use in the launch command
-            raw_string = r"{}".format(
-                self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[selected_config_index][
-                    "path"])
-            subprocess.Popen(raw_string)
-            self.get_pc_games_list()[self._selected_game_index].set_last_played_date()  # Set to the current date
-            self.save_pc_games_list()  # Save the PC games list file in order to save the last played date
+    def delete_alternate_config_pc(self, index):
+        """Deletes an alternate configuration for a PC game."""
+        choice_string = ''
+        config_name = self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[index]["title"]
 
-            print("\nNow running " + self.get_pc_games_list()[self._selected_game_index].get_alternate_configs()[
-                selected_config_index]["title"] + "\n")
+        print("\nAre you sure you wish to permanently delete " + config_name + "?")
+        print("Please enter 'Y' for Yes or 'N' for No.")
 
-            self.go_back_menu_pc()
+        choice_string = input()
+
+        if choice_string.lower() == 'y':
+            self.get_pc_games_list()[self._selected_game_index].delete_alternate_config(index)
+            self.save_pc_games_list()  # Save the PC games list file after an entry is deleted
+
+            print("\nDeleted " + config_name + ".\n")
+            self.view_alternate_configs_pc()
+        elif choice_string.lower() == 'n':
+            self.view_alternate_configs_pc()
+
+    def view_alternate_config_explanation(self):
+        """Displays a short description of the Alternate Configurations feature to help new users."""
+        print("\nThe Alternate Configurations feature allows users to register multiple alternate launch commands")
+        print("for a PC game, each with a title and application path.")
+        print("\nExamples of alternate launch commands include secondary executables and mod organizers.")
+        print("\nThe default application path for a PC game is always listed as Alternate Configuration #1.\n")
+        self.view_alternate_configs_pc()
 
     def view_basic_game_info_pc(self):
         """
         Displays the game title, source platform, date the game was last played, and the default application path.
         """
-        print(self.get_pc_games_list()[self._selected_game_index].get_title() + " Basic Information")
+        print("\n" + self.get_pc_games_list()[self._selected_game_index].get_title() + " Basic Information")
         print("\nTitle: " + self.get_pc_games_list()[self._selected_game_index].get_title())
         print("\nSource Platform: " + self.get_pc_games_list()[self._selected_game_index].get_source())
 
@@ -548,7 +797,8 @@ class GameOrganizerApp:
         """
         # If a game description has already been downloaded from Wikipedia, display it
         if self.get_pc_games_list()[self._selected_game_index].get_description() != '':
-            print(textwrap.fill(self.get_pc_games_list()[self._selected_game_index].get_description(), 140))
+            print("\n" + textwrap.fill(self.get_pc_games_list()[self._selected_game_index].get_description(), 140)
+                  + "\n")
 
             self.go_back_menu_pc()
 
@@ -556,7 +806,7 @@ class GameOrganizerApp:
         else:
             choice_string = ''
 
-            print("There is currently no description stored for this game.")
+            print("\nThere is currently no description stored for this game.")
             print("\nWould you like to download the game description from Wikipedia?")
             print("Please enter 'Y' for Yes or 'N for No.")
 
@@ -585,14 +835,14 @@ class GameOrganizerApp:
         """
         # If a cover art image has already been downloaded for the current game
         if self.get_pc_games_list()[self._selected_game_index].get_cover_art_file() != '':
-            print("View Cover Art")
+            print("\nView Cover Art")
             self.display_cover_art_pc()
 
         # If there is currently no stored cover art file
         else:
             choice_string = ''
 
-            print("There is currently no cover art for this game.")
+            print("\nThere is currently no cover art for this game.")
             print("\nWould you like to download a cover art image?")
             print("Please enter 'Y' for Yes or 'N for No.")
 
@@ -607,7 +857,7 @@ class GameOrganizerApp:
                 self.save_pc_games_list()  # Save the PC games list file
 
                 # Inform the user that a cover art image has been downloaded and give them a choice to open it
-                print("Downloaded Cover Art for " + self.get_pc_games_list()[self._selected_game_index].get_title()
+                print("\nDownloaded Cover Art for " + self.get_pc_games_list()[self._selected_game_index].get_title()
                       + ".")
                 self.display_cover_art_pc()
 
